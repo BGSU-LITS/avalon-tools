@@ -23,3 +23,23 @@ $container[IndexAction::class] = function (Container $container) {
 };
 
 $app->get('/', IndexAction::class);
+
+$container[CueGetAction::class] = function (Container $container) {
+    return new CueGetAction(
+        $container[Messages::class],
+        $container[Session::class],
+        $container[Twig::class]
+    );
+};
+
+$app->get('/cue', CueGetAction::class)->setName('cue');
+
+$container[CuePostAction::class] = function (Container $container) {
+    return new CuePostAction(
+        $container[Messages::class],
+        $container[Session::class],
+        $container[Twig::class]
+    );
+};
+
+$app->post('/cue', CuePostAction::class);

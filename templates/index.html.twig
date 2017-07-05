@@ -1,6 +1,114 @@
-{% set title = 'Hello, World!' %}
+{% set title = 'Avalon Tools' %}
 {% extends [settings.template.page, 'page.html.twig'] %}
 
 {% block content %}
 {{ parent() }}
+    <h2>Cue Sheet Converter</h2>
+    {{ helper.form({action: path_for('cue')})|raw }}
+    <div class="form-group">
+        <label for="file">Cue Sheets to Convert</label>
+        <div class="input-group input-group-file">
+            {{
+                helper.input({
+                    type: 'text',
+                    name: false,
+                    attribs: {
+                        class: 'form-control',
+                        readonly: true,
+                        tabindex: -1
+                    }
+                })
+                |raw
+            }}
+            {{
+                helper.input({
+                    type: 'file',
+                    name: 'files[]',
+                    attribs: {
+                        tabindex: -1,
+                        multiple: 'multiple'
+                    }
+                })
+                |raw
+            }}
+            <span class="input-group-btn">
+                {{
+                    helper.input({
+                        type: 'button',
+                        name: false,
+                        value: 'Choose Files...',
+                        attribs: {
+                            id: 'files',
+                            class: 'btn btn-file btn-success'
+                        }
+                    })
+                    |raw
+                }}
+            </span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        {{
+            helper.input({
+                type: 'email',
+                name: 'email',
+                attribs: {
+                    class: 'form-control',
+                    id: 'email',
+                    value: email
+                }
+            })
+            |raw
+        }}
+    </div>
+    {{
+        helper.input({
+            type: 'submit',
+            name: false,
+            value: 'Convert Cue Sheets',
+            attribs: {class: 'btn btn-primary'}
+        })
+        |raw
+    }}
+    {{ csrf_hidden|raw }}
+    {{ helper.tag('/form')|raw }}
+{% endblock %}
+
+{% block styles %}
+{{ parent() }}
+    <style>
+    .input-group-file input[type=file] {
+        left: 0;
+        height: 100%;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        width: 100%;
+    }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+    <script>
+    // Display which files will be uploaded in file control
+    $('.input-group-file :file').change(function () {
+        var list = [];
+
+        for (var i = 0; i < this.files.length; i++) {
+            list.push(this.files[i].name);
+        }
+
+        $(this).parents('.input-group-file').find(':text').val(
+            list.length + ' file' + (list.length === 1 ? '' : 's') + ': ' +
+            list.join(', ')
+        );
+    });
+
+    // Open file dialog if any part of file control is clicked
+    $('.input-group-file input:not(:file)').click(function () {
+        $(this).parents('.input-group-file').find(':file').click();
+    });
+    </script>
 {% endblock %}

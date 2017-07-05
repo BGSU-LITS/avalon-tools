@@ -1,0 +1,67 @@
+{% set title = 'Avalon Tools: Cue Sheet Converter' %}
+{% extends [settings.template.page, 'page.html.twig'] %}
+
+{% block content %}
+{{ parent() }}
+
+{% for file, data in meta %}
+    <div class="form-group">
+        <label for="structure{{ loop.index }}">
+            <a>{{ file }}.structure.xml</a>
+        </label>
+        <textarea id="structure{{ loop.index }}" class="form-control" rows="8">{% filter escape %}
+<Item label="{{ data.label }}">
+{% for track in data.tracks %}
+    <Span label="{{ track.label }}" begin="{{ track.begin }}"{% if track.end %} end="{{ track.end }}"{% endif %}/>
+{% endfor %}
+</Item>
+{% endfilter %}</textarea>
+    </div>
+{% endfor %}
+
+<div class="form-group">
+    <label for="batch_separate">
+        {% if meta|length > 1 %}Batch as seperate items: {% endif %}<a>batch_manifest_{{ 'now'|date('YmdHis', 'UTC') }}.csv</a>
+    </label>
+    <textarea id="batch_separate" class="form-control" rows="8">
+{{ 'now'|date('c') }} Batch,{{ email }}
+Title,Creator,Genre,Date Issued,File,Label
+{% for file, data in meta %}
+"{{ data.label|replace({'"': '""'}) }}","{{ data.performer|replace({'"': '""'}) }}","{{ data.genre }}","{{ data.date|default('now'|date('Y')) }}","{{ file }}","{{ data.label|replace({'"': '""'}) }}"
+{% endfor %}</textarea>
+</div>
+
+{% if meta|length > 1 %}
+<div class="form-group">
+    <label for="batch_combined">
+        Batch combined to single item: <a>batch_manifest_{{ 'now'|date('YmdHis', 'UTC') }}.csv</a>
+    </label>
+    <textarea id="batch_combined" class="form-control" rows="8">
+{{ 'now'|date('c') }} Batch,{{ email }}
+{% for file, data in meta %}
+{% if loop.first %}Title,Creator,Genre,Date Issued{% endif %},File,Label{% endfor %}
+
+{% for file, data in meta %}
+{% if loop.first %}"{{ data.label|replace({'"': '""'}) }}","{{ data.performer|replace({'"': '""'}) }}","{{ data.genre }}","{{ data.date|default('now'|date('Y')) }}"{% endif %},"{{ file }}","{{ data.label|replace({'"': '""'}) }}"{% endfor %}</textarea>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block styles %}
+{{ parent() }}
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+// Make textareas downloadable by clicking an anchor in their label
+$('textarea').change(function() {
+    var blob = new Blob([$(this).val()], {type: 'text/xml;charset=utf-8'});
+    var link = $('label[for=' + this.id + '] a');
+
+    link.attr('href', window.URL.createObjectURL(blob));
+    link.attr('download', link.text());
+}).change();
+</script>
+{% endblock %}

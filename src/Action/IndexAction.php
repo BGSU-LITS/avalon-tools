@@ -31,6 +31,11 @@ class IndexAction extends AbstractAction
         // Add flash messages to arguments.
         $args['messages'] = $this->messages();
 
+        // Retrieve email address from session if available.
+        if (!empty($this->session->avalon_cue['email'])) {
+            $args['email'] = $this->session->avalon_cue['email'];
+        }
+
         // Render form template.
         return $this->view->render($res, 'index.html.twig', $args);
     }
