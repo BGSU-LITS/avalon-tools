@@ -95,8 +95,10 @@ class CueGetAction extends AbstractAction
 
                 // If the track has a separate performer from the whole album,
                 // add that information to the label.
-                if ($track['performer'] !== $cue['performer']) {
-                    $label .= ' (' . $track['performer'] . ')';
+                if ($track['performer']) {
+                    if ($track['performer'] !== $cue['performer']) {
+                        $label .= ' (' . $track['performer'] . ')';
+                    }
                 }
 
                 // Add the label and begin time of the track to the metadata of
