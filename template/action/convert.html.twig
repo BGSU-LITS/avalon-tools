@@ -1,0 +1,108 @@
+{% set title = 'Convert Cue Sheets' %}
+{% extends 'page.html.twig' %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="bgsu_common_list_breadcrumb">
+        <li><a href="{{ url_for('index') }}">{{ settings.template.site }}</a></li><li aria-current="page">{{ title }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+{{ parent() }}
+
+<h2>Upload Files</h2>
+<form method="post" enctype="multipart/form-data">
+<h3><label for="files">Cue Sheets</label></h3>
+<p><input type="file" id="files" name="files[]" multiple required></p>
+<h3><label for="email">Email Address</label></h3>
+<p><input type="email" id="email" name="email" value="{{ email ?: auth.user.username }}" required></p>
+<p><button type="submit" class="bgsu_common_button bgsu_common_button__arrow bgsu_common_button__primary">Convert</button></p>
+</form>
+
+{% if files %}
+<h2>Results</h2>
+{% set previous_filename = false %}
+{% set index = 0 %}
+{% for file in files %}
+{% for track in file.tracks %}
+{% if track.filename != previous_filename %}
+{% if index %}
+&lt;/Item&gt;</textarea></p>
+{% set previous_filename = track.filename %}
+{% endif %}
+<h3><label for="structure{{ index }}"><a>{{ track.filename }}.structure.xml</a></label></h3>
+<p><textarea id="structure{{ index }}" rows="8" class="bgsu_common__full">
+&lt;Item label="{{ file.title }}"&gt;
+{% endif %}
+    &lt;Span label="{{ track.title }}{% if track.performer != file.performer %} ({{ track.performer }}){% endif %}" begin="{{ track.begin }}"{% if track.end %} end="{{ track.end }}"{% endif %}/>
+{% set index = index + 1 %}
+{% endfor %}
+{% endfor %}
+&lt;/Item&gt;</textarea></p>
+
+<h3><label for="batch_separate">{% if index %}Batch as seperate items: {% endif %}<a>batch_manifest_{{ 'now'|date('YmdHis', 'UTC') }}.csv</a></label></h3>
+<p><textarea id="batch_separate" rows="8" class="bgsu_common__full">
+{{ 'now'|date('c') }} Batch,{{ email }}
+Title,Creator,Genre,Date Issued,File,Label
+{% set previous_filename = false %}
+{% for file in files %}
+{% for track in file.tracks %}
+{% if track.filename != previous_filename %}
+"{{ file.title|replace({'"': '""'}) }}","{{ file.performer|replace({'"': '""'}) }}","{{ file.genre|join(', ') }}","{{ file.date ? file.date|join(', ') : 'now'|date('Y') }}","{{ track.filename }}","{{ file.title|replace({'"': '""'}) }}"
+{% set previous_filename = track.filename %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+</textarea></p>
+
+{% if index %}
+<h3><label for="batch_combined">Batch combined to single item: <a>batch_manifest_{{ 'now'|date('YmdHis', 'UTC') }}.csv</a></label></h3>
+<p><textarea id="batch_combined" rows="8" class="bgsu_common__full">
+{{ 'now'|date('c') }} Batch,{{ email }}
+{% set previous_filename = false %}
+{% for file in files %}
+{% for track in file.tracks %}
+{% if track.filename != previous_filename %}
+{% if not previous_filename %}Title,Creator,Genre,Date Issued{% endif %},File,Label
+{%- set previous_filename = track.filename %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{% set previous_filename = false %}
+{% for file in files %}
+{% for track in file.tracks %}
+{% if track.filename != previous_filename %}
+{% if not previous_filename %}"{{ file.title|replace({'"': '""'}) }}","{{ file.performer|replace({'"': '""'}) }}","{{ file.genre|join(', ') }}","{{ file.date ? file.date|join(', ') : 'now'|date('Y') }}"{% endif %},"{{ track.filename }}","{{ file.title|replace({'"': '""'}) }}"
+{%- set previous_filename = track.filename %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+</textarea></p>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ parent() }}
+<script>
+document.querySelectorAll('textarea').forEach((element) => {
+    const blobify = (element) => {
+        const blob = new Blob(
+            [element.value],
+            {type: 'text/xml;charset=utf-8'}
+        );
+
+        const link = document.querySelector(`label[for=${element.id}] a`);
+
+        link.setAttribute('href', window.URL.createObjectURL(blob));
+        link.setAttribute('download', link.innerText);
+    }
+
+    blobify(element);
+    element.addEventListener('change', (event) => blobify(event.target));
+});
+</script>
+{% endblock %}
